@@ -30,6 +30,7 @@ Circuit Breaker (Spring Cloud Circuit Breaker / Netflix Hystrix)
 What it is: Microservices are often dependent on each other, and when one service fails, it can cause cascading failures throughout the system. A circuit breaker is a pattern that helps to isolate failures and prevent them from affecting the entire system.
 How it helps: Spring Cloud Circuit Breaker (with libraries like Netflix Hystrix) helps prevent cascading failures by monitoring service calls. If a service is failing repeatedly, the circuit breaker trips and prevents further calls to that service, instead returning a fallback response or error.
 Example: If Service A is calling Service B and Service B becomes unavailable, a circuit breaker can prevent Service A from continually attempting to call Service B and allow it to return a default response or an error message instead.
+
 Distributed Tracing (Spring Cloud Sleuth / Zipkin)
 
 What it is: In microservices, requests often travel through many services, and tracking the flow of requests across these services can be challenging. Distributed tracing allows you to trace a request as it flows through different services, which is vital for debugging and monitoring.
