@@ -882,4 +882,57 @@ Creation	           Managed by Spring container (via DI)      	       Created by
 Destruction       	Can be destroyed by Spring (e.g., scope expiry)   	Entity’s lifecycle ends with transaction commit or rollback
 Lifecycle States	  Initialization, PostConstruct, PreDestroy, etc.	   Transient, Managed, Detached, Removed
 -----------------------------------------------------------------------------------------------------------------------
+what is spring interceptor?
+
+A Spring Interceptor is used to intercept HTTP requests before they reach a controller (@Controller or @RestController) and after the response is returned. 
+It works similarly to a Servlet Filter, but it's specific to Spring’s HandlerMapping mechanism.
+
+When to Use Spring Interceptor?
+Logging and monitoring requests.
+Authentication and authorization.
+Modifying request/response objects.
+Performance measurement (execution time tracking).
+Custom pre-processing or post-processing logic.
+
+How Spring Interceptors Work?
+Spring Interceptors implement the HandlerInterceptor interface and override its methods:
+
+Methods in HandlerInterceptor
+Method	                          When It Executes	                                    Return Type
+--------------                    --------------                                       --------------
+preHandle()	         Before the request reaches the controller	                        boolean (if false, request is stopped)
+postHandle()	     After the controller executes but before the response is sent	    void
+afterCompletion()	 After the complete request-response cycle	                        void
+
+-----------------------------------------------------------------------------------------------------------------------
+Spring validations?
+
+Spring provides validation mechanisms to ensure data integrity before processing a request. These validations are commonly used in Spring Boot REST APIs and Spring MVC applications to validate user input.
+
+Types of Validations in Spring
+✅ Built-in Validations (from jakarta.validation)
+✅ Custom Validations (create your own rules)
+✅ Programmatic Validations (manually checking values)
+
+Spring Boot supports Bean Validation API (Jakarta Validation), where you can use annotations like @NotNull, @Size, @Min, @Max, etc.
+
+-----------------------------------------------------------------------------------------------------------------------
+Spring filters?
+
+A filter in Spring is a component that processes HTTP requests before they reach the controller or after they leave the controller.
+
+Why Use Filters?
+✔ Authentication & Authorization (before request processing)
+✔ Logging and Monitoring (log request & response data)
+✔ CORS Handling (Cross-Origin Resource Sharing)
+✔ Modifying Request/Response (add/remove headers)
+
+Feature	                     Filters	                                        Interceptors
+-------------               -------------                                       -------------
+Scope	        Applies to all requests (static files, API, JSPs, etc.)	    Works only for Spring MVC handlers (Controllers, REST Endpoints)
+Execution	    Runs before and after request processing	                Runs before and after controller execution
+Use Cases	    Security, logging, CORS handling	                        Authentication, logging, modifying responses
+Implementation	Implements Filter interface	                                Implements HandlerInterceptor
+-----------------------------------------------------------------------------------------------------------------------
+
 
