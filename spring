@@ -934,5 +934,91 @@ Execution	    Runs before and after request processing	                Runs befo
 Use Cases	    Security, logging, CORS handling	                        Authentication, logging, modifying responses
 Implementation	Implements Filter interface	                                Implements HandlerInterceptor
 -----------------------------------------------------------------------------------------------------------------------
+Spring boot Architecture
 
+┌───────────────────────────┐
+│      Spring Boot App      │
+├───────────────────────────┤
+│  Controller Layer (API)   │  → @RestController
+├───────────────────────────┤
+│  Service Layer (Business) │  → @Service
+├───────────────────────────┤
+│  Repository Layer (JPA)   │  → @Repository
+├───────────────────────────┤
+│  Persistence Layer (DB)   │  → MySQL/PostgreSQL
+└───────────────────────────┘
+
+Annotation: @RestController
+This is the entry point for handling client requests (HTTP GET, POST, PUT, DELETE).
+Uses Spring MVC to process HTTP requests and return responses (JSON/XML).
+Calls the Service Layer to perform business logic.
+
+Annotation: @Service
+Contains business logic and rules.
+Acts as a bridge between Controller and Repository layers.
+Calls Repository Layer to fetch/store data in the database.
+
+Annotation: @Repository
+Directly interacts with the database using Spring Data JPA.
+Provides CRUD operations using JpaRepository.
+Uses Hibernate ORM to map Java objects to database tables.
+
+Technologies: MySQL, PostgreSQL, MongoDB, etc.
+Stores application data in a structured format.
+Uses JPA/Hibernate to map Java objects to relational tables.
+
+----------------------------------------------------------------------------------------------------------------------------------
+is there any configurations are configured by default that the controller APi's are need to accept in json format?
+
+1. Default JSON Configuration in Spring Boot
+Spring Boot automatically configures the following:
+Spring MVC: Enables REST API support (@RestController).
+Jackson Library: Handles JSON serialization/deserialization.
+Default Content-Type: application/json (if using @RestController).
+
+2. How JSON is Automatically Configured?
+Spring Boot internally:
+✔ Uses Jackson (jackson-databind) for JSON processing.
+✔ Configures MappingJackson2HttpMessageConverter to convert Java objects to JSON.
+✔ Sets produces = "application/json" by default in @RestController.
+
+3. Custom Content-Type (XML Support)
+Spring Boot can also support XML with Jackson XML.
+
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+</dependency>
+
+@GetMapping(value = "/{id}", produces = "application/xml")
+public User getUser(@PathVariable Long id) {
+    return new User(id, "John Doe", "john@example.com");
+}
+
+4. Enforcing JSON Request Body (@RequestBody)
+If you expect JSON input, use @RequestBody
+-----------------------------------------------------------------------------------------------------------------------
+@RequestBody Annotation in Spring Boot
+When building REST APIs in Spring Boot, you often need to accept JSON (or other data formats) from the client in an HTTP POST, PUT, or PATCH request. 
+The @RequestBody annotation is used to automatically map the request body (JSON) to a Java object.
+
+It deserializes the incoming JSON payload into a Java object.
+Works with Spring's HttpMessageConverters (like Jackson).
+Reduces boilerplate code (no need for manual parsing).
+Helps enforce strongly typed request models.
+-----------------------------------------------------------------------------------------------------------------------
+Explain about ResponseEntity
+
+ResponseEntity<T> is a powerful class in Spring Boot used to represent the entire HTTP response, including:
+HTTP Status Code (e.g., 200 OK, 400 Bad Request)
+Headers (e.g., Content-Type, Authorization)
+Body (e.g., JSON, XML, text)
+It gives more control over the response compared to returning just an object.
+
+Return JSON with 200 OK     	ResponseEntity.ok(body)
+Return 404 Not Found	        ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)
+Return custom headers	        ResponseEntity.ok().headers(headers).body(data)
+Return 201 Created	            ResponseEntity.created(location).body(data)
+Return 204 No Content	        ResponseEntity.noContent().build()
+-----------------------------------------------------------------------------------------------------------------------
 
