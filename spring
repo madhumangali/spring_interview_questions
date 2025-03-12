@@ -1035,4 +1035,31 @@ If the entity is found, an UPDATE query is executed.
 save()	        Saves the entity but does not immediately flush changes to the database.
 saveAndFlush()	Saves and immediately flushes changes to the database, making them visible to other transactions.
 ----------------------------------------------------------------------------------------------------------------------
+Are Spring Beans Singleton? How Does Spring Handle Multiple Requests?
+Yes, by default, Spring Boot creates beans as singleton scope (@Scope("singleton")). This means only one instance of a bean is created per Spring container.
+However, this does not mean that the object cannot handle multiple requests.
 
+Singleton Beans & Multi-Threading
+Singleton in Spring does not mean single-threaded.
+A singleton bean is shared across all requests but can handle multiple requests concurrently.
+Each request runs in a separate thread, and the same singleton bean can be accessed concurrently by multiple threads.
+
+When Two Requests Arrive:
+Request 1 (GET /user/John) and Request 2 (GET /user/Alice) come at the same time.
+The same instance of UserService is used.
+Since getUser() does not modify shared state, both requests are handled concurrently and safely.
+
+When Singleton Can Cause Issues?
+If a singleton modifies shared state, it can cause race conditions in multi-threaded environments.
+If two requests call increment(), they may get unexpected values due to race conditions.
+
+Alternative: Using Prototype Scope for Multi-Threaded Beans
+If each request needs a new instance of a bean, use prototype scope:
+@Service
+@Scope("prototype")
+public class RequestScopedService {
+    // Each request gets a new instance
+}
+Prototype beans are created every time they are requested, unlike singleton beans.
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
