@@ -1021,4 +1021,18 @@ Return custom headers	        ResponseEntity.ok().headers(headers).body(data)
 Return 201 Created	            ResponseEntity.created(location).body(data)
 Return 204 No Content	        ResponseEntity.noContent().build()
 -----------------------------------------------------------------------------------------------------------------------
+what will do save jpa method at the time of create & update operation?
+
+on Entity Creation (INSERT)
+If the entity does not have an @Id (or the ID is null).
+JPA treats it as a new entity and executes an INSERT query.
+
+on Entity Update (UPDATE)
+If the entity has an existing @Id value, JPA treats it as an update.
+It first checks whether the entity exists in the database.
+If the entity is found, an UPDATE query is executed.
+
+save()	        Saves the entity but does not immediately flush changes to the database.
+saveAndFlush()	Saves and immediately flushes changes to the database, making them visible to other transactions.
+----------------------------------------------------------------------------------------------------------------------
 
