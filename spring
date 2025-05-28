@@ -1064,4 +1064,186 @@ public class RequestScopedService {
 }
 Prototype beans are created every time they are requested, unlike singleton beans.
 ----------------------------------------------------------------------------------------------------------------------
+How to configure multiple Databases in application?
+
+Configuring multiple databases in a Spring Boot application is a common enterprise need — especially for microservices, multi-tenancy, 
+or integration scenarios.
+using Spring Boot + Spring Data JPA it can be acheivebale
+
+1. add dependency (spring-data-jpa & sql-database-connector )
+2. define configuration ( in yml) spring.datasource.primary/secondary.(url, user-name, password)
+3. maintain seperate packages for Entities & Repositories
+3. maintain configurations file(classes) seperately (creates -> Datasource, EntityManagerFactory, TransactionManager)
+Use @Primary on one of the configurations to tell Spring which beans to prioritize by default.
+Use @Qualifier when injecting beans if ambiguity occurs.
+
+------------------------------------------------------------------------------
+Difference Between controller and Restcontroller?
+
+The main difference between @Controller and @RestController in Spring is how they handle HTTP responses and what kind of applications 
+they are suited for:
+
+@Controller
+Used for traditional web applications where you want to return a view (like HTML, JSP, Thymeleaf, etc.) to the user.
+Methods in a class annotated with @Controller typically return a view name that is resolved by a view resolver to generate the final HTML page.
+If you want a method to return data (like JSON or XML) directly to the client, you must explicitly annotate the method with @ResponseBody. 
+Without @ResponseBody, the return value is interpreted as a view name, not as data.
+
+public class MyController {
+    @RequestMapping("/hello")
+    public String hello() {
+        return "hello"; // returns view named "hello"
+    }
+    
+    @RequestMapping("/data")
+    @ResponseBody
+    public MyData data() {
+        return new MyData(); // returns JSON/XML
+    }
+}
+
+@RestController
+
+Designed specifically for RESTful web services.
+It is a convenience annotation that combines @Controller and @ResponseBody.
+All methods in a @RestController automatically serialize the return value (usually Java objects) to JSON or XML 
+and write it directly to the HTTP response body—no need to add @ResponseBody to each method.
+Does not support view resolution; always returns data, not views.
+
+------------------------------------------------------------------------------
+Microservices ?
+
+Microservices is an architectural style where a large application is built as a collection of small, independent, and loosely coupled services. Each service is focused on a specific business function, can be developed, deployed, and scaled independently, and communicates with other services through well-defined APIs—usually over HTTP or messaging systems.
+
+Key Characteristics of Microservices
+Independent Deployment: Each microservice can be updated or deployed without affecting the rest of the system.
+Single Responsibility: Each service is responsible for a specific business capability or domain.
+Technology Agnostic: Teams can use different programming languages, databases, or frameworks for different services.
+API Communication: Services interact via lightweight protocols, typically RESTful APIs or messaging queues.
+Resilience: Failure in one service does not bring down the entire application, improving fault isolation.
+Scalability: Individual services can be scaled independently based on demand, optimizing resource use and cost.
+
+------------------------------------------------------------------------------
+How we Resolve Production fixes?
+
+Production fixes are resolved by quickly detecting issues through monitoring, performing root cause analysis, developing and testing the fix, 
+deploying it safely using automated and incremental strategies (like canary or blue-green deployments), and closely monitoring the results. 
+Automation, observability, and a DevOps mindset are key to minimizing risk and downtime during production fixes
+
+------------------------------------------------------------------------------
+when the application down what are the steps to up the application.
+
+To bring up a down application, identify the cause, communicate with stakeholders, restart or redeploy services, restore from backups if needed, 
+validate the recovery, and monitor closely. Maintain clear recovery procedures and regularly test your disaster recovery plan to ensure rapid, 
+reliable restoration in real-world scenarios
+
+------------------------------------------------------------------------------
+what is circuite breaker pattern?
+
+The Circuit Breaker Pattern is a resilience design pattern used in microservices and distributed systems to prevent cascading failures 
+when one service depends on another.
+
+How the Circuit Breaker Pattern Works
+Monitoring: The circuit breaker monitors requests between services. If failures (such as timeouts or errors) exceed a certain threshold, 
+the circuit breaker "trips."
+
+States:
+Closed: Requests flow normally. The circuit breaker monitors for failures.
+Open: After too many failures, the circuit breaker opens, blocking further requests to the failing service for a set period. 
+This gives the service time to recover and prevents further strain.
+Half-Open: After the timeout, the circuit breaker allows a limited number of test requests to check if the service has recovered. 
+If successful, it returns to the closed state; if not, it goes back to open
+
+@CircuitBreaker(name = "myService", fallbackMethod = "fallbackMethod")
+public String callServiceB() {
+    return restTemplate.getForObject("http://service-b/data", String.class);
+}
+
+public String fallbackMethod(Throwable t) {
+    return "Service B is currently unavailable. Please try later.";
+}
+
+------------------------------------------------------------------------------
+what is api gateway?
+
+📱 Clients → 🌐 API Gateway → 🧩 Microservices
+
+An API Gateway is a server that sits in front of your microservices and acts as a single entry point for all client requests.
+Instead of clients directly calling each service, they send all requests through the API Gateway. It then routes, authenticates, 
+rate-limits, and manages those requests.
+
+| Feature                             | Description                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| **Routing**                         | Directs incoming requests to the correct backend service (e.g., `/users` → UserService) |
+| **Authentication & Authorization**  | Validates JWT tokens, API keys, OAuth credentials                                       |
+| **Rate Limiting & Throttling**      | Prevents abuse or overload by limiting request rate per user/app                        |
+| **Load Balancing**                  | Distributes requests across multiple instances                                          |
+| **Caching**                         | Reduces load by caching frequently requested responses                                  |
+| **Logging & Monitoring**            | Central place to log traffic and monitor metrics                                        |
+| **Request/Response Transformation** | Modify headers, payloads, formats, etc.                                                 |
+| **Fallback & Retry**                | Works with Circuit Breaker to provide graceful fallbacks                                |
+
+Tool/Platform	        Language / Platform
+Spring Cloud Gateway	Java (Spring Boot)
+
+------------------------------------------------------------------------------
+what are differences between spring nd spring boot?
+
+1. What is Spring Framework?
+Spring is a powerful, flexible framework for building Java applications. It provides:
+Dependency Injection (IoC)
+AOP (Aspect-Oriented Programming)
+Transaction management
+MVC Web framework
+Integration with data sources, messaging, security, etc.
+But you must configure everything manually.
+
+2. What is Spring Boot?
+Spring Boot is a rapid development extension of the Spring Framework. It helps you:
+Build stand-alone applications with minimal configuration
+Auto-configures Spring components based on classpath
+Starts embedded servers (like Tomcat or Jetty)
+Uses opinionated defaults to get started quickly
+
+| Feature                 | Spring Framework                 | Spring Boot                                         |
+| ----------------------- | -------------------------------- | --------------------------------------------------- |
+| **Setup**               | Manual configuration (XML/Java)  | Auto-configuration via `application.yml/properties` |
+| **Server**              | Deploy WAR to external server    | Embedded server (Tomcat/Jetty) by default           |
+| **Project Structure**   | Requires more boilerplate        | Convention over configuration                       |
+| **Dependencies**        | Manually manage via Maven/Gradle | Auto-managed with **starter dependencies**          |
+| **Main Method**         | Optional                         | Required (`@SpringBootApplication`)                 |
+| **Spring Initializr**   | N/A                              | ✅ Supported                                         |
+| **Microservices Ready** | Needs manual setup               | Designed for microservices                          |
+| **Startup Time**        | Slower to configure              | Fast startup & dev environment                      |
+| **Dev Tools**           | N/A                              | Includes hot reload via `spring-boot-devtools`      |
+
+------------------------------------------------------------------------------
+What is @Transactional in Spring Boot?
+
+The @Transactional annotation in Spring Boot (and Spring Framework) is used to manage database transactions automatically. 
+It marks a method or class so that all DB operations inside it are treated as a single atomic unit.
+If any part of the transaction fails, the entire operation is rolled back
+
+| Propagation          | Meaning                                        |
+| -------------------- | ---------------------------------------------- |
+| `REQUIRED` (default) | Join existing transaction or create new one    |
+| `REQUIRES_NEW`       | Always start a **new** transaction             |
+| `NESTED`             | Nested transaction with savepoints             |
+| `SUPPORTS`           | Use transaction if exists; else no transaction |
+| `NOT_SUPPORTED`      | Suspend transaction if one exists              |
+| `NEVER`              | Throw exception if transaction exists          |
+| `MANDATORY`          | Must run inside a transaction                  |
+ 
+🛑 Important Tips
+Transactional only works on public methods.
+It won't work on internal method calls (like this.method() inside the same class).
+Works best with Spring-managed beans (i.e., components/services injected via @Autowired or @Component).
+
+------------------------------------------------------------------------------
+How to test void method?
+
+Side effects (e.g., database changes, file writing)
+Collaborator interaction (e.g., whether another method was called)
+Exception handling (e.g., it throws or handles errors correctly)
+------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
