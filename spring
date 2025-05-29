@@ -1246,4 +1246,515 @@ Side effects (e.g., database changes, file writing)
 Collaborator interaction (e.g., whether another method was called)
 Exception handling (e.g., it throws or handles errors correctly)
 ------------------------------------------------------------------------------
+Internal working of spring boot ?
+
+Spring Boot is an opinionated framework built on top of the Spring Framework. It:
+Auto-configures Spring beans based on classpath.
+Embeds servers (like Tomcat) for self-contained apps.
+Reduces boilerplate configuration with sensible defaults.
+
+⚙️ Internal Working of Spring Boot
+
+1. @SpringBootApplication Annotation
+This annotation is a shortcut for:
+| Annotation                 | Purpose                                                         |
+| -------------------------- | --------------------------------------------------------------- |
+| `@Configuration`           | Marks class for bean definitions                                |
+| `@ComponentScan`           | Scans packages for components (`@Service`, `@Controller`, etc.) |
+| `@EnableAutoConfiguration` | Triggers Spring Boot’s **auto-configuration magic**             |
+
+2. SpringApplication.run()
+This is the entry point.
+Sets up ApplicationContext
+Registers beans, listeners, and initializers
+Loads auto-configurations
+Starts the embedded web server (like Tomcat or Jetty)
+
+3. Auto-Configuration (@EnableAutoConfiguration)
+Spring Boot scans META-INF/spring.factories for auto-configuration classes.
+| Annotation                  | Purpose                                                               |
+| --------------------------- | --------------------------------------------------------------------- |
+| `@ConditionalOnClass`       | Load config only if a specific class is on classpath                  |
+| `@ConditionalOnMissingBean` | Load config only if a bean is not already defined                     |
+| `@ConditionalOnProperty`    | Load config based on properties in `application.properties` or `.yml` |
+
+4. Embedded Server (Tomcat, Jetty, etc.)
+Spring Boot uses embedded servlet containers.
+No need for WAR or external server.
+Auto-configured with default ports, context paths, error handling, etc.
+
+5. Configuration Management
+Reads properties from:
+application.properties
+application.yml
+Environment variables
+Command-line args
+
+6. Spring Beans and DI
+Scans components and injects beans automatically.
+Manages lifecycle and dependencies using:
+@Component, @Service, @Repository, @Controller, @Autowired, @Qualifier
+
+7. Starters
+Spring Boot uses starter dependencies like:
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+This pulls in all required libraries (Spring MVC, Jackson, Tomcat, etc.) so you don't have to specify them manually.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+difference between stateless and stateful applications, is rest is stateless/stateful?
+
+| Feature               | **Stateless Application**                    | **Stateful Application**                             |
+| --------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| **Session Memory**    | ❌ Does not retain user data between requests | ✅ Remembers previous interactions (sessions)         |
+| **Server Dependency** | No (any server can handle the request)       | Yes (user must return to the same server)            |
+| **Scalability**       | ✅ High — easy to scale and load balance      | ❌ Lower — requires session stickiness or replication |
+| **Failure Recovery**  | ✅ Easy to retry or reroute                   | ❌ More complex (session data can be lost)            |
+| **Storage of State**  | On the **client** (e.g., JWT, tokens)        | On the **server** (e.g., HTTP sessions)              |
+| **Examples**          | RESTful APIs, microservices                  | Traditional web apps, chat apps, FTP, Telnet         |
+
+Is REST Stateless or Stateful?
+✅ REST is Stateless by Design
+According to REST architectural constraints, REST APIs must be stateless.
+
+🔍 What That Means:
+Each request from client to server must contain all the information needed to understand and process it.
+The server does not store anything about the client session between requests.
+
+Example of a Stateless REST Request
+GET /user/42
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5...
+
+The token contains all the info needed.
+The server doesn't remember who you are between requests — it reads the token each time.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+how you will monitor the application logs and which indexes and dashboards will use?
+
+Monitoring application logs is essential for debugging, performance tuning, and production support. 
+Here's how it's typically done in a Spring Boot / microservices environment — using tools like Splunk, ELK Stack, Grafana + Loki, 
+or Prometheus + Alertmanager.
+-------------------------------------------------------------------------------------------------------------------------------------
+what are the features avialable in Spring actuator?
+
+Spring Boot Actuator is a powerful module that exposes production-ready features to help you monitor and manage your Spring Boot applications easily.
+
+1. Health Checks
+Endpoint: /actuator/health
+Shows overall application health and the health of components like:
+Database
+Disk space
+Redis, RabbitMQ, Kafka, etc.
+
+2. Metrics Monitoring
+Endpoint: /actuator/metrics
+Provides runtime metrics such as:
+Memory usage
+CPU usage
+GC activity
+JVM metrics
+HTTP requests count, response time, etc.
+
+3. Beans Endpoint
+Endpoint: /actuator/beans
+Lists all Spring beans in the application context with dependencies.
+
+4. Environment Info
+Endpoint: /actuator/env
+Displays all environment properties, profiles, and sources (from application.properties, system, etc.).
+
+5. Application Info
+Endpoint: /actuator/info
+Can be customized to show:
+App version
+Build info
+Developer details
+
+6. Config Props
+Endpoint: /actuator/configprops
+Shows all @ConfigurationProperties beans and their values.
+
+7. Thread Dump
+Endpoint: /actuator/threaddump
+Useful for diagnosing performance issues or deadlocks.
+
+8. Shutdown Endpoint
+Gracefully shuts down the app (must be explicitly enabled).
+
+9. HTTP Trace (Optional)
+Endpoint: /actuator/httptrace
+Shows recent HTTP request traces (disabled by default due to memory use).
+
+10. Security
+All endpoints can be secured using Spring Security.
+You can choose which endpoints are public and which require auth.
+
+| Endpoint       | Purpose                         |
+| -------------- | ------------------------------- |
+| `/health`      | App and component health status |
+| `/metrics`     | Runtime metrics and performance |
+| `/beans`       | All Spring beans                |
+| `/env`         | Env variables and config        |
+| `/info`        | App info (version, team, etc.)  |
+| `/configprops` | `@ConfigurationProperties` info |
+| `/threaddump`  | JVM thread details              |
+| `/shutdown`    | Gracefully shut down app        |
+| `/httptrace`   | Recent HTTP requests (optional) |
+-------------------------------------------------------------------------------------------------------------------------------------
+difference between reactive programming and non reactive programming?
+
+🟩 Reactive Programming:
+A programming paradigm focused on asynchronous, non-blocking data streams and event-driven systems.
+Built on Publisher–Subscriber model
+Uses reactive streams: Flux, Mono
+Efficient for high concurrency & I/O-bound operations
+
+🟥 Non-Reactive (Imperative) Programming:
+Traditional way of programming where execution is sequential, often blocking, and request/response is synchronous.
+Uses standard Java types like List, Optional
+Each thread waits for task to complete (blocking I/O)
+
+| Aspect        | Reactive                 | Non-Reactive                   |
+| ------------- | ------------------------ | ------------------------------ |
+| Blocking      | ❌ Non-blocking           | ✅ Blocking                     |
+| Thread Usage  | Efficient, event-loop    | Thread-per-request model       |
+| Data Handling | Streams (`Mono`, `Flux`) | Regular types (`List`, `User`) |
+| Complexity    | Higher learning curve    | Easier to understand           |
+| Performance   | Scales better under load | Simple and direct              |
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+what is main package you will import on spring boot?
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+org.springframework.boot.SpringApplication is used to launch the application.
+org.springframework.boot.autoconfigure.SpringBootApplication is a key annotation that enables auto-configuration, component scanning, 
+and allows you to define the main class for your Spring Boot application.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+how you've maintained code coverage.. and what is the tools used?
+
+Code coverage measures how much of your code is executed by tests (unit, integration, etc.).
+
+1. SonarQube (Code Quality & Coverage Dashboard)
+Provides dashboards for:
+Code coverage
+Duplications
+Code smells
+Bugs & vulnerabilities
+Integrates with JaCoCo to display coverage metrics.
+
+2. IntelliJ / Eclipse IDE Built-in Coverage Tools
+Run tests with coverage.
+Highlight which lines are covered/not covered.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+What Are SOLID Principles?
+
+| Letter | Principle                           | Description                                 |
+| ------ | ----------------------------------- | ------------------------------------------- |
+| **S**  | **Single Responsibility Principle** | One class = One job                         |
+| **O**  | **Open/Closed Principle**           | Open for extension, closed for modification |
+| **L**  | **Liskov Substitution Principle**   | Subtypes must be substitutable              |
+| **I**  | **Interface Segregation Principle** | Small, specific interfaces                  |
+| **D**  | **Dependency Inversion Principle**  | Depend on abstractions, not concretions     |
+
+✅ 1. Single Responsibility Principle (SRP)
+One class should have one reason to change.
+
+❌ Bad:
+public class UserService {
+    public void registerUser(User user) { ... }
+    public void sendWelcomeEmail(User user) { ... } // Email logic inside service
+}
+
+✅ Good (Spring Boot):
+public class UserService {
+    private final EmailService emailService;
+    public void registerUser(User user) {
+        // save user
+        emailService.sendWelcomeEmail(user);
+    }
+}
+Split business logic across microservices: e.g., UserService, NotificationService.
+
+✅ 2. Open/Closed Principle (OCP)
+Code should be open for extension but closed for modification.
+
+Use abstraction and interfaces to avoid changing core logic.
+
+interface PaymentProcessor {
+    void pay();
+}
+
+public class PaypalProcessor implements PaymentProcessor {
+    public void pay() { /* PayPal logic */ }
+}
+
+public class StripeProcessor implements PaymentProcessor {
+    public void pay() { /* Stripe logic */ }
+}
+Now you can add new payment types without modifying existing logic.
+
+✅ 3. Liskov Substitution Principle (LSP)
+Subclasses must be substitutable for their base classes.
+
+❌ Violates LSP:
+class Bird { void fly(); }
+class Ostrich extends Bird { void fly() { throw new UnsupportedOperationException(); } }
+
+Better: Don't use inheritance if behavior changes. Use composition or interfaces.
+
+✅ 4. Interface Segregation Principle (ISP)
+Don’t force clients to depend on methods they don’t use.
+
+❌ Bad:
+interface Animal {
+    void walk();
+    void fly();
+}
+
+✅ Good:
+interface Walkable { void walk(); }
+interface Flyable { void fly(); }
+Now Dog implements Walkable, and Bird implements Walkable, Flyable.
+
+✅ 5. Dependency Inversion Principle (DIP)
+Depend on abstractions, not concrete classes.
+
+In Spring Boot:
+Use constructor injection to inject interfaces, not implementations.
+
+@Service
+public class OrderService {
+    private final PaymentProcessor paymentProcessor;
+
+    @Autowired
+    public OrderService(PaymentProcessor paymentProcessor) {
+        this.paymentProcessor = paymentProcessor;
+    }
+}
+Spring handles wiring via @Component, @Service, or @Configuration.
+-------------------------------------------------------------------------------------------------------------------------------------
+How to implement spring security to application?
+
+🧩 1. Add Spring Security Dependency
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+🔐 2. Default Behavior
+After adding the dependency, Spring Security automatically:
+Secures all endpoints.
+Requires basic authentication.
+Generates a default user/password on app startup (printed in logs).
+
+⚙️ 3. Create a Security Configuration Class
+
+Create a configuration class to define authentication and authorization rules. With Spring Boot, you typically extend WebSecurityConfigurerAdapter 
+(Spring Security 5 and earlier) or use the new component-based approach in Spring Security 6+
+
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                .antMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                .anyRequest().authenticated()
+            .and()
+            .formLogin()
+            .and()
+            .httpBasic();
+    }
+}
+This restricts access based on roles and enables form-based and basic authentication
+
+👤 4. Configure In-Memory Users (for testing)
+
+@Bean
+public UserDetailsService userDetailsService() {
+    UserDetails user = User.withUsername("admin")
+        .password(passwordEncoder().encode("password"))
+        .roles("ADMIN")
+        .build();
+    return new InMemoryUserDetailsManager(user);
+}
+
+@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+}
+
+🔐 5. Use @PreAuthorize for Method-Level Security
+
+@EnableMethodSecurity  // Enable method security
+public class config { ... }
+
+@PreAuthorize("hasRole('ADMIN')")
+public void secureMethod() {
+    // Only admin can access
+}
+
+🧪 6. Test Security
+Once configured, try:
+GET /public/hello → Allowed
+GET /api/secure → 401 Unauthorized unless basic auth is passed
+
+-------------------------------------------------------------------------------------------------------------------------------------
+How to implement JWT- based spring security to application?
+
+🔐 What is JWT (JSON Web Token)?
+JWT is a token-based authentication mechanism.
+It encodes user identity and claims into a signed token.
+The server doesn’t store sessions — instead, every request carries the token.
+
+1. Add Dependencies
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt</artifactId>
+  <version>0.9.1</version>
+</dependency>
+
+2. Create JWT Utility Class
+
+@Component
+public class JwtUtil {
+
+    private final String SECRET = "my-secret-key";
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
+                .signWith(SignatureAlgorithm.HS256, SECRET)
+                .compact();
+    }
+
+    public String extractUsername(String token) {
+        return Jwts.parser().setSigningKey(SECRET)
+                .parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String username = extractUsername(token);
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        Date expiration = Jwts.parser().setSigningKey(SECRET)
+                .parseClaimsJws(token).getBody().getExpiration();
+        return expiration.before(new Date());
+    }
+}
+
+3. Create JWT Filter
+
+@Component
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+
+        String authHeader = request.getHeader("Authorization");
+        String token = null;
+        String username = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+            username = jwtUtil.extractUsername(token);
+        }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (jwtUtil.validateToken(token, userDetails)) {
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+        }
+
+        chain.doFilter(request, response);
+    }
+}
+
+4. Configure Security
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthFilter jwtAuthFilter;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf().disable()
+            .authorizeHttpRequests()
+            .requestMatchers("/auth/**").permitAll()
+            .anyRequest().authenticated()
+            .and()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+5. Authentication Controller
+
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
+        );
+
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
+        final String jwt = jwtUtil.generateToken(userDetails.getUsername());
+
+        return ResponseEntity.ok(Collections.singletonMap("token", jwt));
+    }
+}
+
 ----------------------------------------------------------------------------------------------------------------------
