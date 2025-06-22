@@ -428,6 +428,143 @@ rm -rf /tmp/kafka-logs
 rm -rf /tmp/zookeeper
 
 ------------------------------------------------------------------------------------------------------------------------------------------
+how to configure kafka listener & retry mechanism when produces go offline  while pushing the data to topic 
+
+✅ 1. Producer Retry Configuration (Spring Boot)
+
+When the producer is unable to connect to Kafka, you can configure retries and backoff settings in your application.yml:
+
+spring:
+  kafka:
+    producer:
+      retries: 5                # Number of retries before failing
+      retry-backoff: 2000      # Time (ms) between retries
+      acks: all                # Stronger delivery guarantee
+      bootstrap-servers: localhost:9092
+	  
+✏️ Explanation:
+retries: Kafka will retry sending the record this many times.
+retry-backoff: Wait between retries (in milliseconds).
+acks: all: Ensures all replicas acknowledge the message (best for reliability).
+
+✅ 2. Using a Custom Retry Template (Optional)
+If you want more control, use RetryTemplate:
+
+@Bean
+public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> pf) {
+    KafkaTemplate<String, String> template = new KafkaTemplate<>(pf);
+    RetryTemplate retryTemplate = new RetryTemplate();
+
+    FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+    backOffPolicy.setBackOffPeriod(2000); // 2 seconds
+
+    SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+    retryPolicy.setMaxAttempts(5);
+
+    retryTemplate.setBackOffPolicy(backOffPolicy);
+    retryTemplate.setRetryPolicy(retryPolicy);
+
+    template.setRetryTemplate(retryTemplate);
+    return template;
+}
+
+✅ 3. Kafka Listener (Consumer) Configuration with Retry
+
+If you also want to configure retry on the consumer side:
+
+@KafkaListener(topics = "your-topic", groupId = "your-group")
+public void listen(String message) {
+    // business logic
+    // maybe throw exception if something goes wrong
+}
+For retrying failed messages:
+
+Option A: Retry via @RetryableTopic (Spring Kafka ≥ 2.7)
+
+@RetryableTopic(
+  attempts = 3,
+  backoff = @Backoff(delay = 2000))
+@KafkaListener(topics = "your-topic", groupId = "your-group")
+public void listenWithRetry(String message) {
+    // Retry logic here
+}
+
+Option B: Manual retry using SeekToCurrentErrorHandler
+
+@Bean
+public ConcurrentKafkaListenerContainerFactory<?, ?> kafkaListenerContainerFactory(
+        ConsumerFactory<Object, Object> consumerFactory) {
+
+    ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
+            new ConcurrentKafkaListenerContainerFactory<>();
+
+    factory.setConsumerFactory(consumerFactory);
+    factory.setErrorHandler(new SeekToCurrentErrorHandler(
+            new FixedBackOff(2000L, 3)));  // 3 retries with 2 seconds delay
+    return factory;
+}
+
+🧊 1. Dead Letter Queue (DLQ)
+A DLQ is a Kafka topic where failed messages are sent after exhausting all retries.
+
+✅ Benefits:
+Keeps failed records for reprocessing or investigation.
+Native Kafka approach; fast and scalable.
+
+🔧 Spring Kafka Setup:
+If you're using Spring Kafka 2.8+, it's easy to configure DLQ with DefaultErrorHandler:
+
+@Bean
+public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+        ConsumerFactory<String, String> consumerFactory,
+        KafkaTemplate<String, String> kafkaTemplate) {
+
+    ConcurrentKafkaListenerContainerFactory<String, String> factory =
+            new ConcurrentKafkaListenerContainerFactory<>();
+
+    factory.setConsumerFactory(consumerFactory);
+
+    // Setup Dead Letter Publishing Recoverer
+    DeadLetterPublishingRecoverer recoverer =
+        new DeadLetterPublishingRecoverer(kafkaTemplate,
+            (r, e) -> new TopicPartition("your-topic.DLT", r.partition())); // send to DLT topic
+
+    // Setup retry and DLQ
+    DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+            recoverer,
+            new FixedBackOff(2000L, 3)); // 3 retries, 2s delay
+
+    factory.setCommonErrorHandler(errorHandler);
+
+    return factory;
+}
+
+🧊 2. Fallback to Database
+If you want more control (e.g., for auditing, failed orders, etc.), store failed Kafka messages into a database table.
+
+✅ Benefits:
+Persistent and queryable.
+
+Suitable for transactional recovery workflows.
+
+🔧 Example Code in Listener:
+@Autowired
+private FailedMessageRepository failedRepo;
+
+@KafkaListener(topics = "orders", groupId = "my-group")
+public void listen(String message) {
+    try {
+        // process message
+    } catch (Exception ex) {
+        FailedMessage failed = new FailedMessage();
+        failed.setPayload(message);
+        failed.setReason(ex.getMessage());
+        failed.setTimestamp(LocalDateTime.now());
+        failedRepo.save(failed); // save to DB
+        throw ex; // allow retry or DLQ if configured
+    }
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
