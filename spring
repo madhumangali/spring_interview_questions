@@ -1790,5 +1790,249 @@ The principle states that we must use abstraction (abstract classes and interfac
 High-level modules should not depend on the low-level module but both should depend on the abstraction
 
 -------------------------------------------------------------------------------------------------------------------------
+🔍One of the Most Common API Performance Questions in Interviews!
+
+"Your API is slow in fetching data -what would you do?"
+
+As a backend engineer, this question tests your optimization skills. Here are some key strategies senior Java developers rely on:
+
+✅ Rate Limiting & Throttling– Control API request rates to prevent excessive load and ensure stability
+✅ Load Balancing– Distribute traffic across multiple servers to prevent overload and improve response times
+✅ JPQL instead of `findById()`– Fetch only required fields, avoid unnecessary entity loading. 
+✅ Pagination & Filtering– Never return thousands of records at once. Use `LIMIT & OFFSET`. 
+✅ Asynchronous Processing– Offload heavy computations with `CompletableFuture`, WebFlux, or Kafka. 
+✅ Smart Caching– Use Redis for frequently accessed data. 
+✅ DTOs & Compression– Limit response size with DTOs & enable gzip compression.
+-------------------------------------------------------------------------------------------------------------------------------
+What are the error codes used?
+
+In web development (especially REST APIs), HTTP error codes indicate the status of a request — whether it succeeded, failed, or needs further action.
+
+✅ 1xx: Informational Responses (rarely used)
+| Code | Meaning             |
+| ---- | ------------------- |
+| 100  | Continue            |
+| 101  | Switching Protocols |
+
+✅ 2xx: Success
+| Code | Meaning                                       |
+| ---- | --------------------------------------------- |
+| 200  | OK — Successful GET or POST                   |
+| 201  | Created — Resource was created                |
+| 202  | Accepted — Request accepted, processing later |
+| 204  | No Content — Success, but no body returned    |
+
+❌ 3xx: Redirection
+| Code | Meaning                    |
+| ---- | -------------------------- |
+| 301  | Moved Permanently          |
+| 302  | Found (temporary redirect) |
+| 304  | Not Modified (use cache)   |
+
+⚠️ 4xx: Client Errors — (Request is invalid)
+| Code | Meaning                  | Use Case                                           |
+| ---- | ------------------------ | -------------------------------------------------- |
+| 400  | **Bad Request**          | Validation errors, malformed JSON                  |
+| 401  | **Unauthorized**         | User not authenticated (e.g., no token)            |
+| 403  | **Forbidden**            | Authenticated but not authorized                   |
+| 404  | **Not Found**            | Resource doesn't exist                             |
+| 405  | **Method Not Allowed**   | e.g., POST used instead of GET                     |
+| 409  | **Conflict**             | Duplicate data, like duplicate user registration   |
+| 422  | **Unprocessable Entity** | Semantically incorrect, often used for validations | 
+| 402  | **Payment Required** | To indicate that payment is required to access a resource | 
+
+🔥 5xx: Server Errors — (Server failed to handle a valid request)
+| Code | Meaning                   | Use Case                                   |
+| ---- | ------------------------- | ------------------------------------------ |
+| 500  | **Internal Server Error** | Unhandled exception in code                |
+| 502  | **Bad Gateway**           | Invalid response from upstream server      |
+| 503  | **Service Unavailable**   | Server down, overloaded, or in maintenance |
+| 504  | **Gateway Timeout**       | Timeout from upstream service              |
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Types of saga patterns
+
+🌟 Understanding Saga Patterns in Distributed Systems 
+
+Saga patterns are a way to manage data consistency across multiple services without using traditional distributed transactions. They help ensure that complex business processes complete successfully or roll back gracefully if something goes wrong. 
+
+Here's a quick overview of the main types of saga patterns: 
+
+1. Choreography Saga Pattern 🎬
+
+How it works: 
+Each service performs its local transaction.
+After completing, it emits an event to trigger the next service.
+No central coordinator is involved.
+
+Advantages: 
+Decentralized, reduces single points of failure.
+Suitable for loosely coupled systems.
+
+Challenges: 
+Harder to manage and monitor.
+Complex to handle compensation in case of failures.
+
+2. Orchestration Saga Pattern 🎼
+
+How it works: 
+A central coordinator (or orchestrator) controls the sequence of transactions.
+The orchestrator instructs each service what to do and manages rollbacks if needed.
+
+Advantages: 
+Easier to control and monitor.
+Clear flow of the process.
+
+Challenges: 
+Single point of failure if the orchestrator fails.
+More tightly coupled architecture.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+what are the 12 factors patterns while creating a spring boot microservice
+
+1. Codebase 🌟
+
+One codebase per microservice, tracked in version control (e.g., Git).
+Avoid shared codebases; each microservice should be independently deployable.
+Use monorepo or polyrepo depending on team structure.
+
+Spring Boot Implementation:
+Each microservice has its own Git repository.
+Use Spring Initializr to bootstrap individual services.
+
+2. Dependencies 🌟
+
+Explicitly declare and isolate dependencies (no implicit reliance on system-wide packages).
+Use dependency management tools like Maven or Gradle.
+
+Spring Boot Implementation:
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+Use ./mvnw dependency:tree to inspect dependencies.
+
+3. Config 🌟
+
+Store configuration in environment variables, not in code.
+Avoid hardcoding database URLs, API keys, etc.
+
+Spring Boot Implementation:
+Use application.properties or application.yml for default config.
+Override with environment variables or Spring Cloud Config:
+
+spring:
+  datasource:
+    url: ${DB_URL}
+	
+4. Backing Services 🌟
+
+Treat databases, message brokers, and external APIs as attached resources.
+Swap between local (e.g., H2) and cloud (e.g., AWS RDS) without code changes.
+
+Spring Boot Implementation:
+Use Spring Data JPA for database abstraction.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:5432/mydb
+	
+5. Build, Release, Run 🌟
+
+Strictly separate build, release, and run stages.
+Use CI/CD pipelines (e.g., GitHub Actions, Jenkins).
+
+Spring Boot Implementation:
+Build: ./mvnw clean package
+Release: Dockerize with Dockerfile:
+
+dockerfile
+FROM openjdk:17-jdk-slim
+COPY target/myapp.jar /app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+
+Run: docker run -p 8080:8080 myapp:latest
+
+6. Processes 🌟
+
+Run the app as stateless processes.
+Store session state in external services (e.g., Redis).
+
+Spring Boot Implementation:
+Use Spring Session with Redis:
+
+spring:
+  session:
+    store-type: redis
+	
+7. Port Binding 🌟
+
+Export services via port binding (self-contained, no reliance on external webservers like Tomcat).
+
+Spring Boot Implementation:
+By default, Spring Boot embeds Tomcat/Jetty and listens on 8080.
+Customize in application.properties:
+server.port=9090
+
+8. Concurrency 🌟
+
+Scale horizontally by adding more instances (not threads).
+Use Kubernetes or Docker Swarm for orchestration.
+
+Spring Boot Implementation:
+Deploy multiple containers behind a load balancer.
+
+9. Disposability 🌟
+
+Processes should start fast and shutdown gracefully.
+Handle SIGTERM for graceful shutdown.
+
+Spring Boot Implementation:
+Enable graceful shutdown:
+
+server:
+  shutdown: graceful
+  
+10. Dev/Prod Parity 🌟
+
+Keep development, staging, and production environments as similar as possible.
+Use Docker and Infrastructure as Code (IaC).
+
+Spring Boot Implementation:
+Use Testcontainers for local dev:
+
+@Testcontainers
+class MyIntegrationTest {
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13");
+}
+
+11. Logs 🌟
+
+Treat logs as event streams.
+Export logs to centralized systems (e.g., ELK, Splunk).
+
+Spring Boot Implementation:
+Use Logback or Log4j2 with JSON formatting.
+
+<appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+</appender>
+
+12. Admin Processes 🌟
+
+Run admin/management tasks (e.g., DB migrations) as one-off processes.
+
+Spring Boot Implementation:
+Use Spring Boot Actuator for health checks.
+Use Flyway or Liquibase for DB migrations:
+
+spring:
+  flyway:
+    enabled: true
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
