@@ -565,7 +565,223 @@ public void listen(String message) {
     }
 }
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. What is Kafka, and how does it differ from traditional messaging systems?
 
+Kafka is a distributed event streaming platform for high-throughput, fault-tolerant, real-time data pipelines.
+
+Unlike traditional queues (RabbitMQ), Kafka:
+Persists messages (disk-based retention).
+Supports pub-sub and point-to-point.
+Scales horizontally via partitions.
+
+2. Explain Kafka’s architecture (Brokers, Topics, Partitions, Producers, Consumers).
+
+Brokers: Kafka servers storing data.
+Topics: Logical channels (e.g., orders, payments).
+Partitions: Topics split into partitions for parallelism.
+Producers: Write to topics.
+Consumers: Read from topics (in consumer groups).
+
+3. What is a Consumer Group? How does rebalancing work?
+
+Consumers in a group share partitions (1 partition → 1 consumer in the group).
+Rebalancing occurs when:
+A consumer joins/leaves.
+Partitions are added.
+Can cause temporary downtime (use static membership to reduce it).
+
+4. How does Kafka ensure fault tolerance and high availability?
+
+Replication: Each partition has replicas (leader + followers).
+ISR (In-Sync Replicas): Only in-sync replicas can become leaders.
+
+Acknowledgments (acks):
+acks=0 (no guarantee).
+acks=1 (leader confirms).
+acks=all (all replicas confirm).
+
+5. What is the role of ZooKeeper in Kafka? (Pre-Kafka 3.0)
+
+Managed cluster metadata (broker status, topic configs, consumer offsets).
+Kafka 3.0+ removes ZooKeeper dependency (KRaft mode).
+
+6. Explain Kafka’s log compaction. When is it useful?
+
+Keeps only the latest value per key (e.g., DB changelogs).
+Used for stateful applications (e.g., user-profile-updates).
+
+7. How do you handle duplicate messages in Kafka?
+
+Idempotent Producer: Ensures exactly-once per partition.
+Transactional API: For cross-partition writes.
+Consumer deduplication: Track processed messageIds.
+
+8. What is the difference between auto.offset.reset=earliest and latest?
+
+earliest: Start from the oldest message.
+latest: Start from new messages only.
+
+9. How does Kafka achieve high throughput?
+
+Sequential I/O (append-only logs).
+Zero-copy (sendfile optimization).
+Batching (producer/consumer buffers).
+Partitioning (parallelism).
+
+10. What happens if a Kafka broker fails?
+
+Controller elects a new leader for partitions.
+Producers/consumers reconnect automatically.
+Pending messages in buffers may be lost if acks=1.
+
+11. How do you monitor Kafka performance?
+
+Tools:
+JMX Metrics: kafka.server:type=BrokerTopicMetrics.
+Kafka Exporter + Prometheus + Grafana.
+Burrow: For consumer lag monitoring.
+
+12. Explain Exactly-Once Semantics (EOS) in Kafka.
+
+Idempotent Producer: Prevents duplicates.
+Transactions: Atomic writes across partitions.
+Read-Process-Write: Use transactional.id.
+
+13. How would you reprocess messages from a specific offset?
+
+Solution:
+consumer.seek(topicPartition, offset); // Manual offset reset
+
+14. How do you handle a slow consumer?
+
+Solutions:
+Increase fetch.min.bytes.
+Tune max.poll.records.
+Scale consumers horizontally.
+
+15. What are some common Kafka pitfalls, and how do you avoid them?
+
+Pitfalls:
+Unbounded consumer lag: Monitor and autoscale.
+Producer buffer overflow: Adjust buffer.memory.
+ZooKeeper overload: Use Kafka 3.0+ (KRaft).
+
+16. How do you implement a Kafka consumer in Spring Boot?
+
+@KafkaListener(topics = "orders", groupId = "order-group")
+public void listen(OrderEvent event) {
+    // Process event
+}
+
+17. How to retry failed messages in Spring Kafka?
+
+@RetryableTopic(
+  attempts = "3",
+  backoff = @Backoff(delay = 1000, multiplier = 2)
+)
+@KafkaListener(topics = "orders")
+public void listen(OrderEvent event) { ... }
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. What is Apache Kafka?
+
+Explain it’s a distributed event streaming platform used for building real-time data pipelines and streaming applications.
+
+2. What are the key components of Kafka?
+
+Producer
+Consumer
+Topic
+Partition
+Broker
+Zookeeper / KRaft (Kafka Raft)
+Consumer Group
+
+3. What is a Kafka Topic and Partition?
+
+Topic: A category/feed name to which records are published.
+Partitions: Break topic into segments for parallelism & scalability.
+
+4. What is the role of a Kafka Producer and Consumer?
+
+Producer: Publishes messages to a Kafka topic.
+Consumer: Subscribes to one or more topics and reads data.
+
+5. What is a Consumer Group?
+A group of consumers sharing the workload of consuming messages from a topic.
+
+6. What is Kafka offset?
+A unique ID of a record within a partition. Consumers use offsets to track their position.
+
+7. How does Kafka achieve fault tolerance?
+Replication of partitions across multiple brokers.
+
+8. How do you configure a Kafka Producer in Spring Boot?
+spring.kafka.producer.bootstrap-servers=localhost:9092
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+
+9. How to configure Kafka Listener in Spring Boot?
+
+@KafkaListener(topics = "orders", groupId = "order_group")
+public void consume(String message) {
+    System.out.println("Received: " + message);
+}
+
+10. What happens if a consumer fails while consuming messages?
+Offset is not committed, so the message is re-consumed.
+Can use manual offset commits for better control.
+
+11. How can you ensure message reliability in Kafka?
+Producer acks: all
+Consumer offset commit: Manual
+Retries, Dead Letter Queue (DLQ) on failures
+
+12. What is the difference between Kafka vs. RabbitMQ/ActiveMQ?
+Kafka is for high-throughput, distributed streaming, RabbitMQ for traditional messaging.
+
+13. What is idempotency in Kafka?
+Ensures that reprocessing the same message doesn't have side effects. Useful when consumers might re-read data.
+
+14. What is Kafka’s delivery semantics?
+At most once: Possible data loss
+At least once: Possible duplicates
+Exactly once: Requires Kafka + idempotent producer + transactional consumer
+
+15. How do you handle retries in Kafka consumer (Spring Boot)?
+Using Spring Retry or ErrorHandler:
+
+@KafkaListener(...)
+@Retryable(value = Exception.class, maxAttempts = 3)
+public void consume(String data) {
+    ...
+}
+
+16. What is Dead Letter Queue (DLQ)?
+Messages that fail after max retry attempts can be redirected to a DLQ topic for further inspection.
+
+17. How do you secure Kafka?
+Use SSL/TLS encryption, SASL authentication, and ACLs for authorization.
+
+18. What tools do you use to monitor Kafka?
+Kafka Manager
+Confluent Control Center
+Prometheus + Grafana
+JMX Metrics
+
+19. How do you handle schema evolution in Kafka?
+Use Apache Avro + Schema Registry to maintain and validate schema compatibility.
+
+20. Have you implemented Kafka in a Spring Boot microservice?
+
+You should be able to describe:
+
+Producer config
+Listener with concurrency
+Error handling + retry
+DLQ strategy
+KafkaTemplate usage
 
 
 
