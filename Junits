@@ -1,0 +1,252 @@
+1. What is Mockito, and why is it used with JUnit?
+
+Answer: Mockito is a mocking framework that creates test doubles (mocks/spies) to isolate dependencies in unit tests. It helps:
+Replace real dependencies with controlled mocks.
+Verify interactions (e.g., verify(mock).call()).
+Stub method calls (e.g., when(mock.method()).thenReturn(value)).
+
+2. Explain the difference between @Mock and @InjectMocks.
+
+@Mock: Creates a mock object (e.g., @Mock UserRepository userRepo).
+@InjectMocks: Injects mocks into the class under test (e.g., @InjectMocks UserService userService).
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    @Mock UserRepository userRepo;
+    @InjectMocks UserService userService;
+}
+
+3. How do you stub a method to return a specific value?
+when(mockUserRepo.findById(1L)).thenReturn(Optional.of(new User(1L, "Alice")));
+
+4. How do you stub a method to throw an exception?
+when(mockUserRepo.save(any())).thenThrow(new RuntimeException("DB error"));
+
+5. What’s the difference between doReturn() and thenReturn()?
+thenReturn: Used for standard stubbing.
+doReturn: Used when spying real objects to avoid actual method execution.
+doReturn("fake").when(spy).realMethod(); // Skips realMethod()
+
+6. How do you verify a method was called exactly once?
+verify(mockUserRepo, times(1)).findById(1L);
+
+7. How do you verify a method was never called?
+verify(mockUserRepo, never()).delete(any());
+
+8. How do you verify the order of method calls?
+
+InOrder inOrder = inOrder(mockA, mockB);
+inOrder.verify(mockA).callFirst();
+inOrder.verify(mockB).callSecond();
+
+9. What is a @Spy? When would you use it?
+Spy: Partial mock that delegates to a real object unless stubbed.
+Use case: When you need to mock only specific methods of a real object.
+
+@Spy List<String> list = new ArrayList<>();
+@Test void testSpy() {
+    list.add("real");
+    doReturn(false).when(list).add("fake"); // Stub one method
+    assertTrue(list.add("real")); // Real method
+    assertFalse(list.add("fake")); // Stubbed
+}
+
+10. How do you mock void methods?
+
+doNothing().when(mockLogger).log(anyString()); // Stub void
+doThrow(new IOException()).when(mockFile).delete(); // Throw exception
+
+11. How do you mock static methods?
+Use Mockito 5+ with mockStatic:
+
+try (MockedStatic<Utility> mocked = mockStatic(Utility.class)) {
+    mocked.when(Utility::generateId).thenReturn("fixed-id");
+    assertEquals("fixed-id", Utility.generateId());
+}
+Legacy: PowerMock (not recommended for new projects).
+
+12. What are any(), eq(), and argThat()?
+any(): Matches any argument (e.g., any(User.class)).
+eq(): Matches a specific value (e.g., eq(1L)).
+argThat(): Custom matcher (e.g., argThat(user -> user.getName().startsWith("A"))).
+
+when(mockUserRepo.findByEmail(any())).thenReturn(new User());
+verify(mockUserRepo).save(argThat(user -> user.getId() == 1L));
+Integration with JUnit
+
+13. How do you reset mocks between tests?
+
+@BeforeEach
+void resetMocks() {
+    reset(mockUserRepo); // Resets stubbing/verification
+}
+
+14. How do you test a method that calls external services (e.g., REST API)?
+
+@Mock RestTemplate restTemplate;
+@InjectMocks PaymentService paymentService;
+
+@Test
+void testPayment() {
+    when(restTemplate.postForObject(any(), any(), eq(String.class)))
+        .thenReturn("SUCCESS");
+    assertEquals("SUCCESS", paymentService.processPayment());
+}
+
+15. What are common Mockito anti-patterns?
+
+Over-mocking: Mocking everything (even simple POJOs).
+Verifying implementation details: Focus on behavior, not internal calls.
+Ignoring argument captors: Use ArgumentCaptor for complex validations.
+
+16. When would you use ArgumentCaptor?
+To inspect arguments passed to a mock:
+
+@Captor ArgumentCaptor<User> userCaptor;
+@Test void testSaveUser() {
+    userService.register("Alice");
+    verify(mockUserRepo).save(userCaptor.capture());
+    assertEquals("Alice", userCaptor.getValue().getName());
+}
+
+17. How would you test a retry mechanism with Mockito?
+
+@Mock PaymentGateway gateway;
+@InjectMocks PaymentService paymentService;
+
+@Test
+void testRetryOnFailure() {
+    when(gateway.process(any()))
+        .thenThrow(new RuntimeException())
+        .thenReturn("SUCCESS"); // Fails once, then succeeds
+    assertEquals("SUCCESS", paymentService.processWithRetry());
+    verify(gateway, times(2)).process(any());
+}
+
+18. How do you test a method with a Consumer callback?
+
+@Test
+void testCallback() {
+    Consumer<String> mockConsumer = mock(Consumer.class);
+    userService.processData("test", mockConsumer);
+    verify(mockConsumer).accept("processed-test");
+}
+
+19. What does "Unnecessary stubbing" mean? How do you fix it?
+Cause: A mock was stubbed but never used.
+Fix: Remove the stubbing or use lenient():
+
+lenient().when(mock.unusedMethod()).thenReturn(...);
+
+20. How do you debug a test where verify() fails unexpectedly?
+Use Mockito.mockingDetails(mock).printInvocations() to log all calls to the mock.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ What are the key annotations in Mockito?
+@Mock
+@InjectMocks
+@Spy
+@Captor
+@ExtendWith(MockitoExtension.class) (JUnit 5)
+@RunWith(MockitoJUnitRunner.class) (JUnit 4)
+
+3. What is the difference between @Mock and @Spy?
+
+4. How does @InjectMocks work?
+Can it inject into constructors, fields, and setters?
+
+5. How do you use Mockito.when().thenReturn()?
+Can you chain calls for multiple return values?
+when(service.getUser(anyLong())).thenReturn(user);
+
+6. How do you mock a repository and test a service method?
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserService userService;
+
+    @Test
+    void shouldReturnUser() {
+        User mockUser = new User(1L, "Madhu");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+
+        User result = userService.getUserById(1L);
+        assertEquals("Madhu", result.getName());
+    }
+}
+
+7. How do you verify that a method was called using Mockito?
+verify(userRepository, times(1)).findById(1L);
+
+8. How do you mock a void method?
+doNothing().when(service).sendNotification(any());
+
+9. How do you test an exception using Mockito?
+when(userRepository.findById(anyLong())).thenThrow(new RuntimeException("DB Error"));
+
+10. How do you mock chained method calls (e.g., builder pattern)?
+
+when(response.getData().getName()).thenReturn("Madhu");
+// or use deep stubs
+@Mock(answer = Answers.RETURNS_DEEP_STUBS)
+private MyComplexObject obj;
+
+11. How do you test a method that uses RestTemplate or WebClient?
+You need to mock RestTemplate using when(...).thenReturn(...).
+
+12. How to mock SecurityContextHolder in a test?
+
+SecurityContext context = mock(SecurityContext.class);
+Authentication auth = mock(Authentication.class);
+
+when(context.getAuthentication()).thenReturn(auth);
+when(auth.getName()).thenReturn("madhu");
+
+SecurityContextHolder.setContext(context);
+
+13. What is ArgumentCaptor and how do you use it?
+
+ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+verify(userRepository).save(captor.capture());
+assertEquals("Madhu", captor.getValue().getName());
+
+14. Can you mock private or static methods using Mockito?
+Not by default in Mockito; for that use PowerMockito or Mockito 4 with inline mocking.
+
+15. How do you test the retry mechanism or fallback logic?
+Mock exceptions on the first call and a success on retry:
+
+when(myService.call()).thenThrow(new RuntimeException()).thenReturn("Success");
+
+16. Your test is failing because of NullPointerException. What might be the reason?
+Possibly missing @InjectMocks, or forgot to initialize mocks with MockitoAnnotations.openMocks(this).
+
+17. How do you test controller-layer code in Spring Boot?
+Use @WebMvcTest and MockMvc.
+
+Use @MockBean to inject mocks into the controller.
+
+18. What is the difference between unit test and integration test in Mockito context?
+Unit Test	Integration Test
+Uses @Mock for dependencies	Loads Spring context
+Fast, focused	Slower, tests multiple layers
+Mockito is often used	Mockito used for isolation, or none
+
+19. How do you write a parameterized test using JUnit 5 with Mockito?
+
+@ParameterizedTest
+@ValueSource(strings = {"madhu", "kumar"})
+void testWithNames(String name) {
+    when(userService.isValidName(name)).thenReturn(true);
+    assertTrue(userService.isValidName(name));
+}
+
+20. How do you verify the order of method calls using Mockito?
+
+InOrder inOrder = inOrder(service1, service2);
+inOrder.verify(service1).call();
+inOrder.verify(service2).call();
