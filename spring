@@ -2105,6 +2105,178 @@ When NOT to Use CQRS?
 ❌ Low-latency requirements (eventual consistency introduces delays).
 ❌ Small-scale systems (not worth the complexity).
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+what are the regularly used design patterns in Spring boot microservices ?
+
+✅ 1. Service-Level Patterns
+
+🔥 1.1 Singleton Pattern
+
+What: Ensures a class has only one instance and provides a global access point.
+Spring Usage: All @Service, @Component, @Repository, @Controller beans are singleton by default.
+Why: Avoids memory overhead; ensures thread-safe shared access.
+
+@Service
+public class UserService {
+    // Spring automatically maintains a single instance
+}
+
+🔥 1.2 Factory Pattern
+
+What: Used to delegate object creation logic to a factory class.
+Spring Usage: Used internally in Spring BeanFactory and can be customized with @Bean methods.
+
+@Configuration
+public class MyConfig {
+    @Bean
+    public NotificationService notificationService() {
+        return new EmailNotificationService(); // Can be SMS or Push too
+    }
+}
+
+🔥 1.3 Builder Pattern
+
+What: Constructs complex objects step-by-step.
+Spring Usage: Often used in DTOs, Response Objects, or Lombok’s @Builder.
+
+@Getter
+@Builder
+public class OrderResponse {
+    private String orderId;
+    private String status;
+    private LocalDateTime time;
+}
+
+🔥 1.4 Proxy Pattern
+
+What: Provides a surrogate or placeholder for another object to control access.
+Spring Usage: AOP proxies, Feign Clients, Spring Security, Transactions.
+
+@Transactional // Spring creates a proxy around this method
+public void updateAccount() { ... }
+
+✅ 2. Communication Patterns
+
+🔥 API Gateway Pattern
+
+What: A single entry point for all client interactions with the microservice ecosystem.
+Spring Tool: Spring Cloud Gateway / Zuul.
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/users/**
+			
+🔥 Circuit Breaker Pattern
+
+What: Prevents failure from cascading by cutting off requests to a failed service.
+Tool: Resilience4j, Hystrix (deprecated)
+
+@CircuitBreaker(name = "orderService", fallbackMethod = "fallbackOrder")
+public String getOrders() {
+    return restTemplate.getForObject("http://ORDER-SERVICE/orders", String.class);
+}
+
+🔥Service Discovery Pattern
+
+Used in: Netflix Eureka, Consul
+Why: Services can discover each other dynamically.
+
+✅ 3. Database/Storage Patterns
+
+🔥 Repository Pattern
+
+What: Abstracts the data access layer.
+Spring Usage: CrudRepository, JpaRepository
+
+public interface UserRepository extends JpaRepository<User, Long> {}
+
+🔥 CQRS (Command Query Responsibility Segregation)
+
+What: Separate models for write (commands) and read (queries).
+Use: High-scale systems where reads and writes are optimized differently.
+
+// Command
+@PostMapping("/createUser")
+public void createUser(@RequestBody UserCommand cmd) { ... }
+
+// Query
+@GetMapping("/getUser/{id}")
+public UserDTO getUser(@PathVariable Long id) { ... }
+
+🔥 Event Sourcing
+
+What: Save all state changes as a sequence of events.
+Use With: Kafka, Debezium, etc.
+
+✅ 4. Resilience & Messaging
+
+🔥 Retry Pattern
+
+What: Automatically retries failed requests.
+Tool: Spring Retry, Resilience4j Retry
+
+@Retryable(value = RemoteServiceException.class, maxAttempts = 3)
+public void callExternalService() {
+    // Try 3 times on failure
+}
+
+🔥 Fallback Pattern
+
+What: Fallback logic when something fails (combined with Circuit Breaker).
+
+public String fallbackOrder(Throwable t) {
+    return "Fallback Order Response";
+}
+
+🔥 Saga Pattern
+
+What: Manages distributed transactions using events or commands.
+Types:
+Choreography: Services listen and react to events (Kafka)
+Orchestration: A central controller coordinates the flow.
+
+✅ 5. Security Patterns
+
+🔥 JWT & OAuth2
+
+What: Token-based stateless authentication
+Spring Security with OAuth2 Resource Server
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth-server
+		  
+🔥 Role-Based Access Control (RBAC)
+
+What: Access permissions based on user roles.
+
+@PreAuthorize("hasRole('ADMIN')")
+public void deleteUser(Long id) { ... }
+
+✅ 6. Deployment Patterns
+
+🔥 Strangler Fig Pattern
+
+Used in: Migrating monoliths to microservices gradually.
+Why: Replace parts of old system over time.
+
+🔥 Sidecar Pattern
+
+Used in: Service mesh (Istio, Envoy)
+Why: Add observability/security/proxy features alongside the service.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
 
 
 
