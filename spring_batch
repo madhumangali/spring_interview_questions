@@ -1,0 +1,373 @@
+1. What is Spring Batch and why is it used?
+
+Spring Batch is a lightweight, open-source framework for batch processing in . It is used for processing large volumes of data in chunks with features like transaction management, job scheduling, restart, skip, retry, and parallel processing.
+
+2. What are the key components of Spring Batch?
+
+Job: A container for a complete batch process.
+Step: A phase of the job (e.g., read → process → write).
+ItemReader: Reads data (e.g., from DB, file).
+ItemProcessor: Business logic.
+ItemWriter: Writes to destination.
+JobLauncher: Starts the job.
+JobRepository: Stores metadata of job executions.
+
+3. What is the flow of a Spring Batch job?
+
+Job
+ └── Step
+      ├── ItemReader
+      ├── ItemProcessor
+      └── ItemWriter
+	  
+4. Difference between ItemReader, ItemProcessor, and ItemWriter?
+
+Component	        Role
+ItemReader	    Reads input data
+ItemProcessor	Applies business transformation
+ItemWriter	    Writes output data
+
+5. What is a JobInstance, JobExecution, and StepExecution?
+
+Term	                Description
+JobInstance	    Unique combination of Job + Parameters
+JobExecution	A single run of a JobInstance
+StepExecution	Execution details of a Step in a job
+
+6. How do you configure Spring Batch in a Spring Boot application?
+
+Add spring-boot-starter-batch
+Create Job, Step, and define reader/processor/writer beans.
+
+7. How do you start a batch job programmatically?
+
+jobLauncher.run(myJob, new JobParametersBuilder()
+    .addLong("time", System.currentTimeMillis()).toJobParameters());
+	
+8. How do you pass parameters to a Spring Batch job?
+Using JobParameters
+Retrieve inside reader/processor using @StepScope
+
+9. What is @StepScope and when to use it?
+It makes the bean lifecycle tied to the Step execution and allows access to JobParameters or ExecutionContext.
+
+10. How do you configure a flat file reader in Spring Batch?
+
+@Bean
+public FlatFileItemReader<MyEntity> reader() {
+    FlatFileItemReader<MyEntity> reader = new FlatFileItemReader<>();
+    reader.setResource(new ClassPathResource("data.csv"));
+    reader.setLineMapper(new DefaultLineMapper<>() {
+        {
+            setLineTokenizer(new DelimitedLineTokenizer());
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<>() {{
+                setTargetType(MyEntity.class);
+            }});
+        }
+    });
+    return reader;
+}
+
+11. What is ExecutionContext in Spring Batch?
+It's like a context or storage for maintaining state between steps or within chunked executions, useful for restartability.
+
+12. How do you restart a failed Spring Batch job?
+Ensure job is restartable
+Use JobRepository to track previous runs
+Set Job.incrementer to avoid JobInstanceAlreadyCompleteException
+
+13. How do you prevent duplicate job execution?
+Use JobParameters to make each job instance unique.
+
+14. What is the difference between retry and skip in Spring Batch?
+
+| Feature  | Retry                    | Skip               |
+| -------- | ------------------------ | ------------------ |
+| Purpose  | Retries a failed record  | Skips a bad record |
+| Use Case | Temporary network issues | Corrupt input      |
+| Config   | `RetryPolicy`            | `SkipPolicy`       |
+
+
+15. How to configure retry in Spring Batch?
+
+.step("myStep")
+  .<Input, Output>chunk(10)
+  .reader(reader())
+  .processor(processor())
+  .writer(writer())
+  .faultTolerant()
+  .retry(MyCustomException.class)
+  .retryLimit(3)
+  
+16. How to configure skip logic in Spring Batch?
+
+.faultTolerant()
+.skip(MyDataException.class)
+.skipLimit(5)
+
+17. What is chunk-oriented processing?
+It is a model where items are read and processed in chunks, i.e., a group of items is read → processed → written in a transactional boundary.
+
+18. How to achieve parallel processing in Spring Batch?
+
+Parallel Steps using Flow
+Partitioning
+Multi-threaded step (taskExecutor)
+Remote Chunking
+Remote Partitioning
+
+19. What is partitioning in Spring Batch?
+Dividing a step into multiple slave steps that can run in parallel (e.g., different data ranges).
+
+20. What is the difference between partitioning and chunking?
+
+| Feature     | Partitioning          | Chunking                     |
+| ----------- | --------------------- | ---------------------------- |
+| Granularity | Whole step            | Within a step                |
+| Use case    | Parallel across nodes | Processing large data sets   |
+| Scope       | Split workload        | Efficient DB/file operations |
+
+21. What happens if one record fails during chunk processing?
+
+It retries (if retry is enabled)
+Or skips (if skip is configured)
+Else, the step fails and rolls back the entire chunk
+
+22. How to handle large files in Spring Batch efficiently?
+
+Stream readers (StaxEventItemReader, FlatFileItemReader)
+Use chunk size and paging
+Avoid holding entire file in memory
+
+23. Can we run multiple jobs in parallel?
+Yes, using multiple JobLauncher threads or async TaskExecutor.
+
+24. How do you schedule Spring Batch jobs?
+Using Spring Scheduler, Quartz, or external schedulers like Control-M, Airflow, Cron, Jenkins.
+
+25. How do you test a Spring Batch job?
+Use JobLauncherTestUtils
+Use in-memory DB (like H2) with @SpringBatchTest
+
+26. Have you used Spring Batch with Kafka?
+Read from Kafka using a custom ItemReader
+Use KafkaItemWriter for output
+Manage offsets via ExecutionContext
+
+27. How do you implement job listeners in Spring Batch?
+
+@Bean
+public JobExecutionListener listener() {
+    return new JobExecutionListenerSupport() {
+        @Override
+        public void beforeJob(JobExecution jobExecution) {
+            System.out.println("Job Starting...");
+        }
+    };
+}
+
+28. What are common challenges you’ve faced with Spring Batch?
+Managing job restarts
+Scaling parallel jobs
+Chunking large datasets
+Transaction management across steps
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+1. What is Spring Batch? When would you use it?
+
+Spring Batch is a lightweight framework for batch processing in . It’s used for:
+High-volume data processing (ETL, reports).
+Scheduled jobs (daily/monthly reconciliation).
+Transaction management for chunk-based processing.
+
+2. Explain the key components of Spring Batch.
+Component	              Purpose
+Job	              A batch process (e.g., NightlyReportJob).
+Step	          A phase within a job (e.g., LoadDataStep, ProcessDataStep).
+ItemReader	      Reads input (e.g., JdbcCursorItemReader for DB).
+ItemProcessor	  Transforms data (e.g., filtering, validation).
+ItemWriter	      Writes output (e.g., JdbcBatchItemWriter).
+JobLauncher	      Starts a job (e.g., jobLauncher.run(job, jobParameters)).
+
+3. What is a JobRepository? Why is it required?
+
+Stores metadata about job execution (status, start/end time).
+Ensures restartability (tracks completed steps).
+Configured with @EnableBatchProcessing:
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfig { ... }
+
+4. How do you define a simple job in Spring Batch?
+
+@Bean
+public Job importUserJob(JobBuilderFactory jobs, Step step1) {
+    return jobs.get("importUserJob")
+              .start(step1)
+              .build();
+}
+
+@Bean
+public Step step1(StepBuilderFactory steps) {
+    return steps.get("step1")
+               .<User, User>chunk(10)
+               .reader(reader())
+               .processor(processor())
+               .writer(writer())
+               .build();
+}
+
+5. What is chunk-based processing? How does it work?
+
+Processes data in chunks (e.g., 100 records at a time).
+Flow:
+ItemReader reads 100 items.
+ItemProcessor transforms each item.
+ItemWriter writes all 100 items in a single transaction.
+
+6. How do you handle job restartability?
+Use @OnRestart annotations or check JobExecution status:
+
+@Bean
+public Step step1() {
+    return steps.get("step1")
+               .startLimit(2) // Max restarts
+               .allowStartIfComplete(true) // Re-run even if completed
+               .build();
+}
+
+7. How do you pass parameters to a job?
+JobParameters params = new JobParametersBuilder()
+                      .addString("inputFile", "data.csv")
+                      .toJobParameters();
+jobLauncher.run(job, params);
+Access in a reader/processor:
+
+@Value("#{jobParameters['inputFile']}") String inputFile;
+
+8. What are ItemStream and ExecutionContext?
+
+ItemStream: Interface for readers/writers to save state (e.g., file position).
+ExecutionContext: Stores key-value pairs for stateful processing across steps.
+
+public class CustomReader implements ItemReader<String>, ItemStream {
+    @Override
+    public void update(ExecutionContext ec) {
+        ec.put("lastIndex", currentIndex); // Save state
+    }
+}
+
+9. How do you parallelize Spring Batch jobs?
+
+Option 1: Multi-threaded step:
+
+@Bean
+public Step step1() {
+    return steps.get("step1")
+               .tasklet(tasklet())
+               .throttleLimit(4) // Threads
+               .taskExecutor(new SimpleAsyncTaskExecutor())
+               .build();
+}
+
+Option 2: Partitioning (split data into chunks):
+
+@Bean
+public Step masterStep() {
+    return steps.get("masterStep")
+               .partitioner("slaveStep", partitioner())
+               .step(slaveStep())
+               .gridSize(4) // Partitions
+               .build();
+}
+
+10. How do you handle job failure and retries?
+Retry with RetryTemplate:
+@Bean
+public Step step1() {
+    return steps.get("step1")
+               .chunk(10)
+               .reader(reader())
+               .writer(writer())
+               .faultTolerant()
+               .retryLimit(3)
+               .retry(DeadlockLoserDataAccessException.class)
+               .build();
+}
+
+11. What is a JobOperator? How is it different from JobLauncher?
+JobLauncher: Starts jobs.
+JobOperator: Advanced control (restart, stop, query jobs):
+jobOperator.restart(jobExecutionId);
+
+12. How do you test a Spring Batch job?
+
+Using JobLauncherTestUtils:
+
+@SpringBootTest
+class BatchJobTest {
+    @Autowired JobLauncherTestUtils testUtils;
+
+    @Test
+    void testJob() throws Exception {
+        JobExecution execution = testUtils.launchJob();
+        assertEquals(BatchStatus.COMPLETED, execution.getStatus());
+    }
+}
+
+13. How would you process a large CSV file (10GB) efficiently?
+
+Use chunk processing (e.g., 1000 records per chunk).
+Stream data (don’t load entire file in memory):
+
+@Bean
+public ItemReader<User> reader() {
+    return new FlatFileItemReaderBuilder<User>()
+           .name("userReader")
+           .resource(new FileSystemResource("data.csv"))
+           .delimited()
+           .names("id", "name")
+           .targetType(User.class)
+           .build();
+}
+
+14. How do you implement skip logic for invalid records?
+
+@Bean
+public Step step1() {
+    return steps.get("step1")
+               .chunk(10)
+               .reader(reader())
+               .writer(writer())
+               .faultTolerant()
+               .skipLimit(100) // Max skips
+               .skip(ValidationException.class)
+               .build();
+}
+
+15. How do you schedule a Spring Batch job to run nightly?
+Using @Scheduled:
+
+@Scheduled(cron = "0 0 2 * * ?") // 2 AM daily
+public void runJob() {
+    jobLauncher.run(job, new JobParameters());
+}
+Or with Quartz Scheduler for complex schedules.
+
+Performance & Optimization
+16. How do you optimize a slow Spring Batch job?
+Solutions:
+
+Increase chunk size (reduces transaction overhead).
+
+Use partitioning (parallel processing).
+
+Optimize SQL (indexes, batch inserts).
+
+Disable unnecessary listeners.
+
+17. What is the difference between JdbcCursorItemReader and JdbcPagingItemReader?
+JdbcCursorItemReader: Uses a database cursor (faster but holds connection).
+
+JdbcPagingItemReader: Uses pagination (slower but memory-safe).
