@@ -1,0 +1,79 @@
+** Spring boot application running using docker **
+
+Below is a step-by-step process with commands to package, register, and run your Spring Boot application using Docker:
+
+1. Package Your Spring Boot Application
+First, generate a JAR file using Maven or Gradle:
+---------
+mvn clean package
+---------
+This will create a file like target/your-app.jar.
+
+2. Create a Dockerfile
+In your project root, create a file named Dockerfile (capital D, no extension):
+---------
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+COPY target/your-app.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+---------
+Replace your-app.jar with your actual JAR name
+
+3. Create docker-compose.yml
+In your project root, create docker-compose.yml:
+
+----------------------------
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: demo
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-app
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/demo
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
+----------------------------
+The db service sets up PostgreSQL.
+The app service builds and runs your Spring Boot app, using environment variables to configure the database connection
+
+4. Spring Boot application.properties or application.yml:
+Configure your Spring Boot application to use the PostgreSQL driver and connect to the database service defined in Docker Compose.
+Code
+
+# application.properties
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+
+5. Build and Start Everything with Docker Compose
+docker-compose up --build
+This command builds your Spring Boot Docker image and starts both the app and PostgreSQL containers.
+
+6. Verify Everything is Running
+Check containers:
+docker ps
+Your Spring Boot app should be accessible at http://localhost:8080.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
