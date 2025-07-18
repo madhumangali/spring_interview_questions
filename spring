@@ -73,6 +73,9 @@ Role-based Access Control (RBAC): It allows for fine-grained role-based access c
 Cross-origin Resource Sharing (CORS): Manages CORS policies to prevent unauthorized access from different origins.
 Secure Communication: Ensures that communication between microservices is encrypted and secure.
 
+OAuth 2.0 is an authorization framework that allows third-party applications to access user resources without exposing their credentials.
+Instead of giving your username and password, you give an access token. The client uses that token to access your data securely.
+
 -----------------------------------------------------------------------------------------------------------------------------
 
 Can you explain what Circuit Breaker is and how it is used in Spring Boot applications (e.g., using Resilience4j or Hystrix)?
