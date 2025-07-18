@@ -520,7 +520,7 @@ public class MyApplication {
 Using application.properties or application.yml: You can also disable auto-configuration classes using application properties:
 properties
 spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-By leveraging Spring Boot’s auto-configuration feature, you can quickly bootstrap your application while retaining the flexibility to customize and optimize as needed. If you have any more questions or need further examples, feel free to ask!
+By leveraging Spring Boot’s auto-configuration feature, you can quickly bootstrap your application while retaining the flexibility to customize and optimize as needed.
 ----------------------------------------------------------------------------------------------------------------------------------
 How would you handle configuration management in a Spring Boot microservice (e.g., properties, YAML)?
 
